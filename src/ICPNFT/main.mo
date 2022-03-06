@@ -6,6 +6,8 @@ import Time "mo:base/Time";
 import BlogDomain "./domain/blog/BlogDomain";
 import BlogRepositories "./repository/blog/BlogRepositories";
 
+import IERCX "./interface/Interface"
+
 actor Blog {
 
     public type Error = {
