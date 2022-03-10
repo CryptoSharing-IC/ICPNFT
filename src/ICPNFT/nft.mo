@@ -13,7 +13,7 @@ import Array "mo:base/Array";
 import Result "mo:base/Result";
 import Prelude "mo:base/Prelude";
 import Buffer "mo:base/Buffer";
-import Types "./types";
+import Types "../interface/types";
 
 shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: Text, _ower: Principal) = this {
 
@@ -41,7 +41,66 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     private var users = HashMap.HashMap<Principal, UserInfo>(1, Principal.equal, Principal.hash);
     
 
+    private func _exists(tokenId: Nat) : Bool {
+        switch (tokens.get(tokenId)) {
+            case (?info) { return true; };
+            case _ { return false; };
+        }
+    };
 
+    private func _ownerOf(tokenId: Nat) : ?Principal {
+        switch (tokens.get(tokenId)) {
+            case (?info) { return ?info.owner; };
+            case (_) { return null; };
+        }
+    };
+    private func _isApproved(who: Principal, tokenId: Nat) : Bool {
+        switch (tokens.get(tokenId)) {
+            case (?info) { return info.operator == ?who; };
+            case _ { return false; };
+        }
+    };
+      private func _isApprovedOrOwner(spender: Principal, tokenId: Nat) : Bool {
+        switch (_ownerOf(tokenId)) {
+            case (?owner) {
+                return spender == owner or _isApproved(spender, tokenId) or _isApprovedForAll(owner, spender);
+            };
+            case _ {
+                return false;
+            };
+        };        
+    };
+
+    private func _getApproved(tokenId: Nat) : ?Principal {
+        switch (tokens.get(tokenId)) {
+            case (?info) {
+                return info.operator;
+            };
+            case (_) {
+                return null;
+            };
+        }
+    };
+
+    
+
+    public query func getApproved(tokenId: Nat) : async Principal {
+        switch (_exists(tokenId)) {
+            case true {
+                switch (_getApproved(tokenId)) {
+                    case (?who) {
+                        return who;
+                    };
+                    case (_) {
+                        return Principal.fromText("aaaaa-aa");
+                    };
+                }   
+            };
+            case (_) {
+                throw Error.reject("token not exist")
+            };
+        }
+    };
 
     // upgrade functions
     system func preupgrade() {
