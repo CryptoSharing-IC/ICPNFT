@@ -1,3 +1,6 @@
+import Time "mo:base/Time";
+import TrieSet "mo:base/TrieSet";
+
 module {
     public type NFTMetadata = {
         logo: Text;
