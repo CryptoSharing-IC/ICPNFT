@@ -39,7 +39,69 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     private stable var usersEntries : [(Principal, UserInfo)] = [];
     private var tokens = HashMap.HashMap<Nat, TokenInfo>(1, Nat.equal, Hash.hash);
     private var users = HashMap.HashMap<Principal, UserInfo>(1, Principal.equal, Principal.hash);
-    
+
+    private func _transfer(to: Principal, tokenId: Nat) {
+            assert(_exists(tokenId));
+            switch(tokens.get(tokenId)) {
+                case (?info) {
+                    _removeTokenFrom(info.owner, tokenId);
+                    _addTokenTo(to, tokenId);
+                    info.owner := to;
+                    tokens.put(tokenId, info);
+                };
+                case (_) {
+                    assert(false);
+                };
+            };
+    };
+
+
+    public shared(msg) func transfer(to: Principal, tokenId: Nat): async TxReceipt {
+        var owner: Principal = switch (_ownerOf(tokenId)) {
+            case (?own) {
+                own;
+            };
+            case (_) {
+                return #err(#TokenNotExist)
+            }
+        };
+        if (owner != msg.caller) {
+            return #err(#Unauthorized);
+        };
+        _transfer(to, tokenId);
+        let txid = addTxRecord(msg.caller, #transfer, ?tokenId, #user(msg.caller), #user(to), Time.now());
+        return #ok(txid);
+    };
+
+    public shared(msg) func transferFrom(from: Principal, to: Principal, tokenId: Nat): async TxReceipt {
+        if(_exists(tokenId) == false) {
+            return #err(#TokenNotExist)
+        };
+        if(_isApprovedOrOwner(msg.caller, tokenId) == false) {
+            return #err(#Unauthorized);
+        };
+        _clearApproval(from, tokenId);
+        _transfer(to, tokenId);
+        let txid = addTxRecord(msg.caller, #transferFrom, ?tokenId, #user(from), #user(to), Time.now());
+        return #ok(txid);
+    };
+
+    public shared(msg) func batchTransferFrom(from: Principal, to: Principal, tokenIds: [Nat]): async TxReceipt {
+        var num: Nat = 0;
+        label l for(tokenId in Iter.fromArray(tokenIds)) {
+            if(_exists(tokenId) == false) {
+                continue l;
+            };
+            if(_isApprovedOrOwner(msg.caller, tokenId) == false) {
+                continue l;
+            };
+            _clearApproval(from, tokenId);
+            _transfer(to, tokenId);
+            num += 1;
+            ignore addTxRecord(msg.caller, #transferFrom, ?tokenId, #user(from), #user(to), Time.now());
+        };
+        return #ok(txs.size() - num);
+    };
 
     private func _unwrap<T>(x : ?T) : T =
     switch x {
@@ -234,4 +296,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         usersEntries := [];
         tokensEntries := [];
     };
+
+
+    
 }
