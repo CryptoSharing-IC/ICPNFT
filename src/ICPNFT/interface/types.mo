@@ -1,5 +1,10 @@
 import Time "mo:base/Time";
 import TrieSet "mo:base/TrieSet";
+import Principal "mo:base/Principal";
+import Error "mo:base/Error";
+import Nat "mo:base/Nat";
+import Text "mo:base/Text";
+import Result "mo:base/Result";
 
 module {
     public type NFTMetadata = {
@@ -40,9 +45,17 @@ module {
         var tokens: TrieSet.Set<Nat>;              
     };
 
-    public type Error = {
+    public type Errors = {
         #Unauthorized;
         #TokenNotExist;
         #InvalidSpender;
+    };
+    public type CallResult = {
+        #Ok: Nat;
+        #Err: Errors;
+    };
+    public type MintResult = {
+        #Ok: (Nat, Nat);
+        #Err: Errors;
     };
 }
