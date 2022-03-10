@@ -296,6 +296,11 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         usersEntries := [];
         tokensEntries := [];
     };
+    
+    private func _burn(owner: Principal, tokenId: Nat) {
+        _clearApproval(owner, tokenId);
+        _transfer(blackhole, tokenId);
+    };
 
 
     
