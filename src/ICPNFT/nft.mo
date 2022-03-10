@@ -154,7 +154,10 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         };
         return #Ok(txid);
     };
-
+    
+    public query func isApprovedForAll(owner: Principal, operator: Principal) : async Bool {
+        return _isApprovedForAll(owner, operator);
+    };
     // upgrade functions
     system func preupgrade() {
         usersEntries := Iter.toArray(users.entries());
