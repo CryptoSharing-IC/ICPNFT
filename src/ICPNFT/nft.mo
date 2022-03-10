@@ -158,6 +158,45 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     public query func isApprovedForAll(owner: Principal, operator: Principal) : async Bool {
         return _isApprovedForAll(owner, operator);
     };
+
+    public shared(msg) func setApprovalForAll(operator: Principal, value: Bool): async CallResult {
+        if(msg.caller == operator) {
+            return #Err(#Unauthorized);
+        };
+        
+        if value {
+            let caller = switch (users.get(msg.caller)) {
+                case (?user) { user };
+                case _ { _newUser() };
+            };
+            caller.operators := TrieSet.put(caller.operators, operator, Principal.hash(operator), Principal.equal);
+            users.put(msg.caller, caller);
+            let user = switch (users.get(operator)) {
+                case (?user) { user };
+                case _ { _newUser() };
+            };
+            user.allowedBy := TrieSet.put(user.allowedBy, msg.caller, Principal.hash(msg.caller), Principal.equal);
+            users.put(operator, user);
+           
+        } else {
+            switch (users.get(msg.caller)) {
+                case (?user) {
+                    user.operators := TrieSet.delete(user.operators, operator, Principal.hash(operator), Principal.equal);    
+                    users.put(msg.caller, user);
+                };
+                case _ { };
+            };
+            switch (users.get(operator)) {
+                case (?user) {
+                    user.allowedBy := TrieSet.delete(user.allowedBy, msg.caller, Principal.hash(msg.caller), Principal.equal);    
+                    users.put(operator, user);
+                };
+                case _ { };
+            };
+            
+        };
+        return #Ok(200);
+    };
     // upgrade functions
     system func preupgrade() {
         usersEntries := Iter.toArray(users.entries());
