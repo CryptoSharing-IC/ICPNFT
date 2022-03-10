@@ -35,13 +35,14 @@ module {
         var user: Principal; // this token's right to use
         var metadata: ?TokenMetadata;
         var operator: ?Principal;
-        var operatorUser: ?Principal;
+        var operatorForUse: ?Principal;
+        var user: ?Principal;
         timestamp: Time.Time;
     };
 
     public type UserInfo = {
         var operators: TrieSet.Set<Principal>;  
-        var operatorsForUse: TrieSet.Set<Principal>;    
+        var nftForUse: TrieSet.Set<Principal>;    
         var allowedBy: TrieSet.Set<Principal>;     
         var allowedTokens: TrieSet.Set<Nat>;       
         var tokens: TrieSet.Set<Nat>;     
