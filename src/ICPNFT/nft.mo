@@ -40,6 +40,13 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     private var tokens = HashMap.HashMap<Nat, TokenInfo>(1, Nat.equal, Hash.hash);
     private var users = HashMap.HashMap<Principal, UserInfo>(1, Principal.equal, Principal.hash);
     
+
+    private func _unwrap<T>(x : ?T) : T =
+    switch x {
+      case null { Prelude.unreachable() };
+      case (?x_) { x_ };
+    };
+    
     private func _newUser() : UserInfo {
         {
             var operators = TrieSet.empty<Principal>();
@@ -195,6 +202,21 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             };
             
         };
+        return #Ok(200);
+    };
+
+    public shared(msg) func setTokenMetadata(tokenId: Nat, new_metadata: TokenMetadata) : async TxReceipt {
+        // only canister owner can set
+        if(msg.caller != owner_) {
+            return #Err(#Unauthorized);
+        };
+        if(_exists(tokenId) == false) {
+            return #Err(#TokenNotExist)
+        };
+        let token = _unwrap(tokens.get(tokenId));
+        let old_metadata = token.metadata;
+        token.metadata := ?new_metadata;
+        tokens.put(tokenId, token);
         return #Ok(200);
     };
     // upgrade functions
