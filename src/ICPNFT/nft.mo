@@ -102,6 +102,24 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         };
         return #ok(txs.size() - num);
     };
+    // public update calls
+    public shared(msg) func mint(to: Principal, metadata: ?TokenMetadata): async MintResult {
+        if(msg.caller != owner_) {
+            return #err(#Unauthorized);
+        };
+        let token: TokenInfo = {
+            index = totalSupply_;
+            var owner = to;
+            var metadata = metadata;
+            var operator = null;
+            timestamp = Time.now();
+        };
+        tokens.put(totalSupply_, token);
+        _addTokenTo(to, totalSupply_);
+        totalSupply_ += 1;
+        let txid = addTxRecord(msg.caller, #mint(metadata), ?token.index, #user(blackhole), #user(to), Time.now());
+        return #ok((token.index, txid));
+    };
 
     private func _unwrap<T>(x : ?T) : T =
     switch x {
