@@ -148,6 +148,14 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             case (_) { return null; };
         }
     };
+    
+    private func _balanceOf(who: Principal) : Nat {
+        switch (users.get(who)) {
+            case (?user) { return TrieSet.size(user.tokens); };
+            case (_) { return 0; };
+        }
+    };
+    
     private func _isApproved(who: Principal, tokenId: Nat) : Bool {
         switch (tokens.get(tokenId)) {
             case (?info) { return info.operator == ?who; };
