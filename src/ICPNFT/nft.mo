@@ -237,8 +237,15 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             };
         };        
     };
-
-    private func _isApprovedOrUser(spender: Principal, tokenId) {
+    private func _isApprovedUserForAll(owner: Principal, operator: Principal) : Bool {
+        switch (users.get(owner)) {
+            case (?user) {
+                return TrieSet.mem(user.allowedTokensUse, operator, Principal.hash(operator), Principal.equal);
+            };
+            case _ { return false; };
+        };
+    };  
+   private func _isApprovedOrUser(spender: Principal, tokenId) {
      
         switch (_userOf(tokenId)) {
             case (?user) {
