@@ -142,7 +142,13 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         }
     };
 
-    private func _ownerOf(tokenId: Nat) : ?Principal {
+    private func _userOf(tokenId: Nat) : ?Principal {
+        switch (tokens.get(tokenId)) {
+            case (?info) { return ?info.user;};
+            case (_) {return null;};
+        }
+    };   
+     private func _ownerOf(tokenId: Nat) : ?Principal {
         switch (tokens.get(tokenId)) {
             case (?info) { return ?info.owner; };
             case (_) { return null; };
@@ -175,12 +181,24 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             case (?owner) {
                 return spender == owner or _isApproved(spender, tokenId) or _isApprovedForAll(owner, spender);
             };
-            case _ {
+            case (_) {
                 return false;
             };
         };        
     };
 
+    private func _isApprovedOrUser(spender: Principal, tokenId) {
+     
+        switch (_userOf(tokenId)) {
+            case (?user) {
+                return spender == user or _getApprovedUser(tokenId) == spender
+            };
+            case (_) {
+                return false;
+            }
+        }
+    };
+    
     private func _getApproved(tokenId: Nat) : ?Principal {
         switch (tokens.get(tokenId)) {
             case (?info) {
@@ -192,7 +210,17 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         }
     };
    
-    
+   private func _getApprovedUser(tokenId: Nat) {
+       switch (tokens.get(tokenId)) {
+           case (?info) {
+               return info.operatorForUse;
+           };
+           case (_) {
+               return null;
+           };
+       }
+   };    
+
 
     public query func getApproved(tokenId: Nat) : async Principal {
         switch (_exists(tokenId)) {
@@ -247,8 +275,49 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
                 users.put(operator, user);
             };
         };
-        return #Ok(txid);
+        return #Ok(200);
     };
+    
+           public shared(msg) func approveUser(operator: Principal, tokenId: Nat)) : async CallResult {
+        var owner: Principal = switch (_ownerOf(tokenId)) {
+            case (?own) {
+                own;
+            };
+            case (_) {
+                return #Err(#TokenNotExist)
+            }
+        };
+        var user: Principal = _userOf(tokenId);
+        if(user == operator) {
+            return #Err(#Unauthorized);
+        } 
+
+        if(not _isApprovedOrOwner(msg.caller, tokenId) and not _isApprovedOrUser(msg.call, tokenId)) {
+            return #Err(#Unauthorized);
+        }
+        switch (tokens.get(tokenId)) {
+            case (?info) {
+                info.operatorForUse := ?operator;
+                tokens.put(tokenId, info);
+            };
+            case _ {
+                return #Err(#TokenNotExist);
+            };
+        }; 
+        switch (users.get(operator)) {
+            case (?user) {
+                user.allowedTokensUse := TrieSet.put(user.allowedTokensUse, tokenId, Hash.hash(tokenId), Nat.equal);
+                users.put(operator, user);
+            };
+            case _ {
+                let user = _newUser();
+                user.allowedTokensUse := TrieSet.put(user.allowedTokensUse, tokenId, Hash.hash(tokenId), Nat.equal);
+                users.put(operator, user);
+            };
+        };
+        return #Ok(200);
+    } 
+    
     
     public query func isApprovedForAll(owner: Principal, operator: Principal) : async Bool {
         return _isApprovedForAll(owner, operator);

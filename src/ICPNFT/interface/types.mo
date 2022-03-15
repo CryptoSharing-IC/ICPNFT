@@ -36,7 +36,6 @@ module {
         var metadata: ?TokenMetadata;
         var operator: ?Principal;
         var operatorForUse: ?Principal;
-        var user: ?Principal;
         timestamp: Time.Time;
     };
 
@@ -45,6 +44,8 @@ module {
         var nftForUse: TrieSet.Set<Principal>;    
         var allowedBy: TrieSet.Set<Principal>;     
         var allowedTokens: TrieSet.Set<Nat>;       
+
+        var allowedTokensUse: TrieSet.Set<Nat>; 
         var tokens: TrieSet.Set<Nat>;     
     };
 
