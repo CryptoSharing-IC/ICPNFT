@@ -40,19 +40,20 @@ module {
     };
 
     public type UserInfo = {
-        var operators: TrieSet.Set<Principal>;  
-        var nftForUse: TrieSet.Set<Principal>;    
+        var operators: TrieSet.Set<Principal>;    
         var allowedBy: TrieSet.Set<Principal>;     
         var allowedTokens: TrieSet.Set<Nat>;       
 
         var allowedTokensUse: TrieSet.Set<Nat>; 
         var tokens: TrieSet.Set<Nat>;     
+        var tokenForUse: TrieSet.Set<Nat>;
     };
 
     public type Errors = {
         #Unauthorized;
         #TokenNotExist;
         #InvalidSpender;
+        #InvalidReceiver
     };
     public type CallResult = {
         #Ok: Nat;

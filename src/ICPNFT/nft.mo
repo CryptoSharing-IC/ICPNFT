@@ -102,6 +102,57 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         };
         return #ok(txs.size() - num);
     };
+    // If the caller is not `from`, it must be approved to move this tokenUser by {approve} or {setApprovalForAll} or {approveUser}.
+    public shared(msg) func transferUserFrom(from: Principal, to: Principal, tokenId: Nat) : async CallResult {
+        var owner: Principal = switch (_ownerOf(tokenId)) {
+            case (?own) {
+                own;
+            };
+            case (_) {
+                return #Err(#TokenNotExist)
+            }
+        };
+        var user : Principal = switch (_userOf(tokenId)) {
+            case (?user) {
+                if(user != from)  return #Err(#Unauthorized);
+            };
+            case (_) {
+                return #Err(#Unauthorized);
+            }
+        }
+        if(not _isApprovedOrOwner(msg.caller, tokenId) and not _isApprovedOrUser(msg.caller, tokenId)) {
+            return #Err(#Unauthorized);
+        }
+        //tokenInfo
+        switch (tokens.get(tokenId)) {
+            case (?info) {
+                info.user := to;
+                tokens.put(tokenId, info);
+            };
+            case _ {
+                return #Err(#TokenNotExist);
+            };
+        };
+
+        switch (users.get(from)) {
+            case (?from) {
+                from.tokenForUse := TrieSet.delete(from.tokenForUse, tokenId, Principal.hash(tokenId), Principal.equal)
+            };
+            case _ {return #Err(#InvalidSpender);};
+        };
+        switch (users.get(to)) {
+            case (?to) {
+                to.tokenForUse := TrieSet.add(to.tokenForUse, tokenId, Principal.hash(tokenId), Principal.equal);
+            };
+            case _ {return #Err(#InvalidReceiver;};
+        };
+        return #Ok(200);
+    };
+    public shared(msg) func transferAllFrom(from: Principal, to: Principal, tokenId: Nat) : async CallResult {
+        transferUserFrom(from, to, tokenId);
+        transferFrom(from, to, tokenId);
+        return #ok(200);
+    };
     // public update calls
     public shared(msg) func mint(to: Principal, metadata: ?TokenMetadata): async MintResult {
         if(msg.caller != owner_) {
@@ -191,7 +242,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
      
         switch (_userOf(tokenId)) {
             case (?user) {
-                return spender == user or _getApprovedUser(tokenId) == spender
+                return spender == user or _getApprovedUser(tokenId) == spender or _isApprovedUserForAll(owner, spender);
             };
             case (_) {
                 return false;
@@ -277,8 +328,8 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         };
         return #Ok(200);
     };
-    
-           public shared(msg) func approveUser(operator: Principal, tokenId: Nat)) : async CallResult {
+
+    public shared(msg) func approveUser(operator: Principal, tokenId: Nat)) : async CallResult {
         var owner: Principal = switch (_ownerOf(tokenId)) {
             case (?own) {
                 own;
