@@ -48,6 +48,7 @@ module {
         timestamp: Time.Time;
     };
     public type UserInfo = {
+        id: Principal;
         var operators: TrieSet.Set<Principal>;    
         var allowedBy: TrieSet.Set<Principal>; 
 
@@ -61,7 +62,7 @@ module {
         var tokenForUse: TrieSet.Set<Nat>;
     };
     public type UserInfoExt = {
-       
+        id: Principal;
         operators: TrieSet.Set<Principal>;    
         allowedBy: TrieSet.Set<Principal>;     
         allowedTokens: TrieSet.Set<Nat>;       

@@ -243,7 +243,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
                 users.put(to, user); //todo, is this necessary?
             };
             case _ {
-                let user = _newUser();
+                let user = _newUser(to);
                 user.tokens := TrieSet.put(user.tokens, tokenId, Hash.hash(tokenId), Nat.equal);
                 users.put(to, user); 
             };
@@ -270,7 +270,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
                 users.put(to, user); //todo, is this necessary?
             };
             case _ {
-                let user = _newUser();
+                let user = _newUser(to);
                 user.tokenForUse := TrieSet.put(user.tokenForUse, tokenId, Hash.hash(tokenId), Nat.equal);
                 users.put(to, user); 
             };
@@ -378,8 +378,9 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
       case (?x_) { x_ };
     };
     
-    private func _newUser() : UserInfo {
+    private func _newUser(principal:Principal) : UserInfo {
         {   
+            id = principal;
             var operators = TrieSet.empty<Principal>();
             var allowedBy = TrieSet.empty<Principal>();
             var allowedTokens = TrieSet.empty<Nat>();
@@ -520,7 +521,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
                 users.put(operator, user);
             };
             case _ {
-                let user = _newUser();
+                let user = _newUser(operator);
                 user.allowedTokens := TrieSet.put(user.allowedTokens, tokenId, Hash.hash(tokenId), Nat.equal);
                 users.put(operator, user);
             };
@@ -560,7 +561,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
                 users.put(operator, user);
             };
             case _ {
-                let user = _newUser();
+                let user = _newUser(operator);
                 user.allowedTokensUse := TrieSet.put(user.allowedTokensUse, tokenId, Hash.hash(tokenId), Nat.equal);
                 users.put(operator, user);
             };
@@ -587,7 +588,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             users.put(msg.caller, caller);
             let user = switch (users.get(operator)) {
                 case (?user) { user };
-                case _ { _newUser() };
+                case _ { _newUser(operator) };
             };
             user.allowedBy := TrieSet.put(user.allowedBy, msg.caller, Principal.hash(msg.caller), Principal.equal);
             users.put(operator, user);
@@ -620,13 +621,13 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         if value {
             let caller = switch (users.get(msg.caller)) {
                 case (?user) { user };
-                case _ { _newUser() };
+                case _ { _newUser(msg.caller) };
             };
             caller.operatorsUser := TrieSet.put(caller.operatorsUser, operator, Principal.hash(operator), Principal.equal);
             users.put(msg.caller, caller);
             let user = switch (users.get(operator)) {
                 case (?user) { user };
-                case _ { _newUser() };
+                case _ { _newUser(operator) };
             };
             user.allowedUserBy := TrieSet.put(user.allowedUserBy, msg.caller, Principal.hash(msg.caller), Principal.equal);
             users.put(operator, user);
