@@ -49,15 +49,19 @@ module {
     };
     public type UserInfo = {
         var operators: TrieSet.Set<Principal>;    
-        var allowedBy: TrieSet.Set<Principal>;     
-        var allowedTokens: TrieSet.Set<Nat>;       
+        var allowedBy: TrieSet.Set<Principal>; 
 
+        var operatorsUser: TrieSet.Set<Principal>;    
+        var allowedUserBy: TrieSet.Set<Principal>;    
+
+        var allowedTokens: TrieSet.Set<Nat>;       
         var allowedTokensUse: TrieSet.Set<Nat>; 
+
         var tokens: TrieSet.Set<Nat>;     
         var tokenForUse: TrieSet.Set<Nat>;
     };
     public type UserInfoExt = {
-        principal: Principal;
+       
         operators: TrieSet.Set<Principal>;    
         allowedBy: TrieSet.Set<Principal>;     
         allowedTokens: TrieSet.Set<Nat>;       
