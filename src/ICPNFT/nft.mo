@@ -181,10 +181,10 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             case (_) {
                 return #Err(#Unauthorized);
             }
-        }
+        };
         if(not _isApprovedOrOwner(msg.caller, tokenId) and not _isApprovedOrUser(msg.caller, tokenId)) {
             return #Err(#Unauthorized);
-        }
+        };
         //tokenInfo
         switch (tokens.get(tokenId)) {
             case (?info) {
@@ -206,7 +206,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             case (?to) {
                 to.tokenForUse := TrieSet.add(to.tokenForUse, tokenId, Principal.hash(tokenId), Principal.equal);
             };
-            case _ {return #Err(#InvalidReceiver;};
+            case _ {return #Err(#InvalidReceiver);};
         };
         
         let txid = addTxRecord(msg.caller, #transferUserFrom, ?tokenId, #user(msg.caller), #user(to), Time.now());
@@ -499,7 +499,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         return #Ok(txid);
     };
 
-    public shared(msg) func approveUser(operator: Principal, tokenId: Nat)) : async TxReceipt {
+    public shared(msg) func approveUser(operator: Principal, tokenId: Nat) : async TxReceipt {
         var owner: Principal = switch (_ownerOf(tokenId)) {
             case (?own) {
                 own;
@@ -511,11 +511,10 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         var user: Principal = _userOf(tokenId);
         if(user == operator) {
             return #Err(#Unauthorized);
-        } 
-
+        };
         if(not _isApprovedOrOwner(msg.caller, tokenId) and not _isApprovedOrUser(msg.call, tokenId)) {
             return #Err(#Unauthorized);
-        }
+        };
         switch (tokens.get(tokenId)) {
             case (?info) {
                 info.operatorForUse := ?operator;
@@ -538,9 +537,8 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         };
         let txid = addTxRecord(msg.caller, #approveUser, ?tokenId, #user(msg.caller), #user(operator), Time.now());
         return #Ok(txid);
-    } 
-    
-    
+    };
+     
     public query func isApprovedForAll(owner: Principal, operator: Principal) : async Bool {
         return _isApprovedForAll(owner, operator);
     };
