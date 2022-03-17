@@ -636,6 +636,45 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         let txid = addTxRecord(msg.caller, #setMetadata, ?token.index, #metadata(old_metadate), #metadata(?new_metadata), Time.now());
         return #Ok(txid);
     };
+
+    // public query function 
+    public query func logo(): async Text {
+        return logo_;
+    };
+
+    public query func name(): async Text {
+        return name_;
+    };
+
+    public query func symbol(): async Text {
+        return symbol_;
+    };
+
+    public query func desc(): async Text {
+        return desc_;
+    };
+
+    public query func balanceOf(who: Principal): async Nat {
+        return _balanceOf(who);
+    };
+
+    public query func totalSupply(): async Nat {
+        return totalSupply_;
+    };
+
+    // get metadata about this NFT collection
+    public query func getMetadata(): async Metadata {
+        {
+            logo = logo_;
+            name = name_;
+            symbol = symbol_;
+            desc = desc_;
+            totalSupply = totalSupply_;
+            owner = owner_;
+            cycles = Cycles.balance();
+        }
+    };
+
     // upgrade functions
     system func preupgrade() {
         usersEntries := Iter.toArray(users.entries());
