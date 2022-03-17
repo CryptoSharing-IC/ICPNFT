@@ -81,4 +81,32 @@ module {
         #Ok: (Nat, Nat);
         #Err: Errors;
     };
+    /// Update call operations
+    public type Operation = {
+        #mint: ?TokenMetadata;  
+        #burn;
+        #transfer;
+        #transferFrom;
+        #transferUserFrom
+        #transferAllFrom
+        #approve;
+        #approveUser
+        #approveAll;
+        #revokeAll; // revoke approvals
+        #setMetadata;
+    };
+    /// Update call operation record fields
+    public type Record = {
+        #user: Principal;
+        #metadata: ?TokenMetadata; // op == #setMetadata
+    };
+    public type TxRecord = {
+        caller: Principal;
+        op: Operation;
+        index: Nat;
+        tokenIndex: ?Nat;
+        from: Record;
+        to: Record;
+        timestamp: Time.Time;
+    };
 }

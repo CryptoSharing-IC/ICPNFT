@@ -40,6 +40,24 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     private var tokens = HashMap.HashMap<Nat, TokenInfo>(1, Nat.equal, Hash.hash);
     private var users = HashMap.HashMap<Principal, UserInfo>(1, Principal.equal, Principal.hash);
 
+    private func addTxRecord(
+        caller: Principal, op: Operation, tokenIndex: ?Nat,
+        from: Record, to: Record, timestamp: Time.Time
+    ): Nat {
+        let record: TxRecord = {
+            caller = caller;
+            op = op;
+            index = txIndex;
+            tokenIndex = tokenIndex;
+            from = from;
+            to = to;
+            timestamp = timestamp;
+        };
+        txs := Array.append(txs, [record]);
+        txIndex += 1;
+        return txIndex - 1;
+    };
+
     private func _transfer(to: Principal, tokenId: Nat) {
             assert(_exists(tokenId));
             switch(tokens.get(tokenId)) {
@@ -190,13 +208,16 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             };
             case _ {return #Err(#InvalidReceiver;};
         };
-        return #Ok(200);
+        
+        let txid = addTxRecord(msg.caller, #transferUserFrom, ?tokenId, #user(msg.caller), #user(to), Time.now());
+        return #ok(txid);
     };
     public shared(msg) func transferAllFrom(from: Principal, to: Principal, tokenId: Nat) : async TxReceipt {
         transferUserFrom(from, to, tokenId);
         transferFrom(from, to, tokenId);
-        return #ok(200);
-
+        let txid = addTxRecord(msg.caller, #transferAllFrom, ?tokenId, #user(msg.caller), #user(to), Time.now());
+        return #ok(txid);
+    };
     public shared(msg) func batchTransferUserFrom(from: Principal, to: Principal, tokenIds: [Nat]): async TxReceipt {
         var num: Nat = 0;
         label l for(tokenId in Iter.fromArray(tokenIds)) {
@@ -432,7 +453,8 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
                 users.put(operator, user);
             };
         };
-        return #Ok(200);
+        let txid = addTxRecord(msg.caller, #approve, ?tokenId, #user(msg.caller), #user(operator), Time.now());
+        return #Ok(txid);
     };
 
     public shared(msg) func approveUser(operator: Principal, tokenId: Nat)) : async TxReceipt {
@@ -472,7 +494,8 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
                 users.put(operator, user);
             };
         };
-        return #Ok(200);
+        let txid = addTxRecord(msg.caller, #approveUser, ?tokenId, #user(msg.caller), #user(operator), Time.now());
+        return #Ok(txid);
     } 
     
     
@@ -514,9 +537,9 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
                 };
                 case _ { };
             };
-            
+            txid := addTxRecord(msg.caller, #revokeAll, null, #user(msg.caller), #user(operator), Time.now());
         };
-        return #Ok(200);
+        return #Ok(txid);
     };
 
     public shared(msg) func setTokenMetadata(tokenId: Nat, new_metadata: TokenMetadata) : async TxReceipt {
@@ -540,7 +563,8 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         let old_metadata = token.metadata;
         token.metadata := ?new_metadata;
         tokens.put(tokenId, token);
-        return #Ok(200);
+        let txid = addTxRecord(msg.caller, #setMetadata, ?token.index, #metadata(old_metadate), #metadata(?new_metadata), Time.now());
+        return #Ok(txid);
     };
     // upgrade functions
     system func preupgrade() {
