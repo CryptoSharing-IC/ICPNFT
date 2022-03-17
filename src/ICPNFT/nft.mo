@@ -212,6 +212,32 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         };
         return #ok(txs.size() - num);
     };
+    private func _addTokenTo(to: Principal, tokenId: Nat) {
+        switch(users.get(to)) {
+            case (?user) {
+                user.tokens := TrieSet.put(user.tokens, tokenId, Hash.hash(tokenId), Nat.equal);
+                users.put(to, user); //todo, is this necessary?
+            };
+            case _ {
+                let user = _newUser();
+                user.tokens := TrieSet.put(user.tokens, tokenId, Hash.hash(tokenId), Nat.equal);
+                users.put(to, user); 
+            };
+        }
+    };
+
+    private func _removeTokenFrom(owner: Principal, tokenId: Nat) {
+        assert(_exists(tokenId) and _isOwner(owner, tokenId));
+        switch(users.get(owner)) {
+            case (?user) {
+                user.tokens := TrieSet.delete(user.tokens, tokenId, Hash.hash(tokenId), Nat.equal);
+                users.put(owner, user);
+            };
+            case _ {
+                assert(false);
+            };
+        }
+    };
     // public update calls
     public shared(msg) func mint(to: Principal, metadata: ?TokenMetadata): async MintResult {
         if(msg.caller != owner_) {
@@ -220,8 +246,30 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         let token: TokenInfo = {
             index = totalSupply_;
             var owner = to;
+            var user = to;
             var metadata = metadata;
             var operator = null;
+            var operatorForUse = null;
+            timestamp = Time.now();
+        };
+        tokens.put(totalSupply_, token);
+        _addTokenTo(to, totalSupply_);
+        totalSupply_ += 1;
+        let txid = addTxRecord(msg.caller, #mint(metadata), ?token.index, #user(blackhole), #user(to), Time.now());
+        return #ok((token.index, txid));
+    };
+
+    public shared(msg) func _safeMint(to: Principal, metadata: ?TokenMetadata): async MintResult {
+        if(msg.caller != owner_) {
+            return #err(#Unauthorized);
+        };
+        let token: TokenInfo = {
+            index = totalSupply_;
+            var owner = to;
+            var user = to;  // who have the use right
+            var metadata = metadata;
+            var operator = null;
+            var operatorForUse = null; // who can operator the use right
             timestamp = Time.now();
         };
         tokens.put(totalSupply_, token);
@@ -238,7 +286,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     };
     
     private func _newUser() : UserInfo {
-        {
+        {   
             var operators = TrieSet.empty<Principal>();
             var allowedBy = TrieSet.empty<Principal>();
             var allowedTokens = TrieSet.empty<Nat>();
