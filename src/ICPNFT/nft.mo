@@ -77,7 +77,10 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         assert(_exists(tokenId));
         switch(tokens.get(tokenId)) {
             case (?info) {
+                _removeTokenUserFrom(info.owner, tokenId);
+                _addTokenUserTo(to, tokenId);
                 info.user := to;
+                tokens.put(tokenId, info);
             };
             case (_) {
                 assert(false);
@@ -259,6 +262,33 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             };
         }
     };
+
+        private func _addTokenUserTo(to: Principal, tokenId: Nat) {
+        switch(users.get(to)) {
+            case (?user) {
+                user.tokenForUse := TrieSet.put(user.tokenForUse, tokenId, Hash.hash(tokenId), Nat.equal);
+                users.put(to, user); //todo, is this necessary?
+            };
+            case _ {
+                let user = _newUser();
+                user.tokenForUse := TrieSet.put(user.tokenForUse, tokenId, Hash.hash(tokenId), Nat.equal);
+                users.put(to, user); 
+            };
+        }
+    };
+
+    private func _removeTokenUserFrom(owner: Principal, tokenId: Nat) {
+        assert(_exists(tokenId) and _isOwner(owner, tokenId));
+        switch(users.get(owner)) {
+            case (?user) {
+                user.tokenForUse := TrieSet.delete(user.tokenForUse, tokenId, Hash.hash(tokenId), Nat.equal);
+                users.put(owner, user);
+            };
+            case _ {
+                assert(false);
+            };
+        }
+    };
     private func _clearApproval(owner: Principal, tokenId: Nat) {
         assert(_exists(tokenId) and _isOwner(owner, tokenId));
         switch (tokens.get(tokenId)) {
@@ -322,25 +352,25 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         return #ok((token.index, txid));
     };
 
-    public shared(msg) func _safeMint(to: Principal, metadata: ?TokenMetadata): async MintResult {
-        if(msg.caller != owner_) {
-            return #err(#Unauthorized);
-        };
-        let token: TokenInfo = {
-            index = totalSupply_;
-            var owner = to;
-            var user = to;  // who have the use right
-            var metadata = metadata;
-            var operator = null;
-            var operatorForUse = null; // who can operator the use right
-            timestamp = Time.now();
-        };
-        tokens.put(totalSupply_, token);
-        _addTokenTo(to, totalSupply_);
-        totalSupply_ += 1;
-        let txid = addTxRecord(msg.caller, #mint(metadata), ?token.index, #user(blackhole), #user(to), Time.now());
-        return #ok((token.index, txid));
-    };
+    // public shared(msg) func _safeMint(to: Principal, metadata: ?TokenMetadata): async MintResult {
+    //     if(msg.caller != owner_) {
+    //         return #err(#Unauthorized);
+    //     };
+    //     let token: TokenInfo = {
+    //         index = totalSupply_;
+    //         var owner = to;
+    //         var user = to;  // who have the use right
+    //         var metadata = metadata;
+    //         var operator = null;
+    //         var operatorForUse = null; // who can operator the use right
+    //         timestamp = Time.now();
+    //     };
+    //     tokens.put(totalSupply_, token);
+    //     _addTokenTo(to, totalSupply_);
+    //     totalSupply_ += 1;
+    //     let txid = addTxRecord(msg.caller, #mint(metadata), ?token.index, #user(blackhole), #user(to), Time.now());
+    //     return #ok((token.index, txid));
+    // };
 
     private func _unwrap<T>(x : ?T) : T =
     switch x {
