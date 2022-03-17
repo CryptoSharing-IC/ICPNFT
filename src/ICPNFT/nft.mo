@@ -432,7 +432,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     private func _isApprovedUserForAll(owner: Principal, operator: Principal) : Bool {
         switch (users.get(owner)) {
             case (?user) {
-                return TrieSet.mem(user.allowedTokensUse, operator, Principal.hash(operator), Principal.equal);
+                return TrieSet.mem(user.operatorsUser, operator, Principal.hash(operator), Principal.equal);
             };
             case _ { return false; };
         };
@@ -603,6 +603,45 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             switch (users.get(operator)) {
                 case (?user) {
                     user.allowedBy := TrieSet.delete(user.allowedBy, msg.caller, Principal.hash(msg.caller), Principal.equal);    
+                    users.put(operator, user);
+                };
+                case _ { };
+            };
+            txid := addTxRecord(msg.caller, #revokeAll, null, #user(msg.caller), #user(operator), Time.now());
+        };
+        return #Ok(txid);
+    };
+
+    public shared(msg) func setApprovalUserForAll(operator: Principal, value: Bool): async TxReceipt {
+        if(msg.caller == operator) {
+            return #Err(#Unauthorized);
+        };
+        
+        if value {
+            let caller = switch (users.get(msg.caller)) {
+                case (?user) { user };
+                case _ { _newUser() };
+            };
+            caller.operatorsUser := TrieSet.put(caller.operatorsUser, operator, Principal.hash(operator), Principal.equal);
+            users.put(msg.caller, caller);
+            let user = switch (users.get(operator)) {
+                case (?user) { user };
+                case _ { _newUser() };
+            };
+            user.allowedUserBy := TrieSet.put(user.allowedUserBy, msg.caller, Principal.hash(msg.caller), Principal.equal);
+            users.put(operator, user);
+           
+        } else {
+            switch (users.get(msg.caller)) {
+                case (?user) {
+                    user.operatorsUser := TrieSet.delete(user.operatorsUser, operator, Principal.hash(operator), Principal.equal);    
+                    users.put(msg.caller, user);
+                };
+                case _ { };
+            };
+            switch (users.get(operator)) {
+                case (?user) {
+                    user.allowedUserBy := TrieSet.delete(user.allowedUserBy, msg.caller, Principal.hash(msg.caller), Principal.equal);    
                     users.put(operator, user);
                 };
                 case _ { };
