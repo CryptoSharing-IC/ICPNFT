@@ -214,14 +214,6 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     };
     // public update calls
     public shared(msg) func mint(to: Principal, metadata: ?TokenMetadata): async MintResult {
-        var owner_: Principal = switch (_ownerOf(tokenId)) {
-            case (?own) {
-                own;
-            };
-            case (_) {
-                return #Err(#TokenNotExist)
-            }
-        };
         if(msg.caller != owner_) {
             return #err(#Unauthorized);
         };
