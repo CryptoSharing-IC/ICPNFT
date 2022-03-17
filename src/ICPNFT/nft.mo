@@ -24,7 +24,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     type TokenInfo = Types.TokenInfo;
     type UserInfo = Types.UserInfo;
     type Errors = Types.Errors;
-    type CallResult = Types.CallResult;
+    type TxReceipt = Types.TxReceipt;
     type MintResult = Types.MintResult;
 
     private stable var logo : Text = _logo; // base64 encoded image
@@ -147,7 +147,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     };
 
     // If the caller is not `from`, it must be approved to move this tokenUser by {approve} or {setApprovalForAll} or {approveUser}.
-    public shared(msg) func transferUserFrom(from: Principal, to: Principal, tokenId: Nat) : async CallResult {
+    public shared(msg) func transferUserFrom(from: Principal, to: Principal, tokenId: Nat) : async TxReceipt {
         var owner: Principal = switch (_ownerOf(tokenId)) {
             case (?own) {
                 own;
@@ -192,7 +192,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         };
         return #Ok(200);
     };
-    public shared(msg) func transferAllFrom(from: Principal, to: Principal, tokenId: Nat) : async CallResult {
+    public shared(msg) func transferAllFrom(from: Principal, to: Principal, tokenId: Nat) : async TxReceipt {
         transferUserFrom(from, to, tokenId);
         transferFrom(from, to, tokenId);
         return #ok(200);
@@ -214,6 +214,14 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     };
     // public update calls
     public shared(msg) func mint(to: Principal, metadata: ?TokenMetadata): async MintResult {
+        var owner_: Principal = switch (_ownerOf(tokenId)) {
+            case (?own) {
+                own;
+            };
+            case (_) {
+                return #Err(#TokenNotExist)
+            }
+        };
         if(msg.caller != owner_) {
             return #err(#Unauthorized);
         };
@@ -349,7 +357,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         }
     };
 
-    public shared(msg) func approve(tokenId: Nat, operator: Principal) : async CallResult {
+    public shared(msg) func approve(tokenId: Nat, operator: Principal) : async TxReceipt {
         var owner: Principal = switch (_ownerOf(tokenId)) {
             case (?own) {
                 own;
@@ -387,7 +395,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         return #Ok(200);
     };
 
-    public shared(msg) func approveUser(operator: Principal, tokenId: Nat)) : async CallResult {
+    public shared(msg) func approveUser(operator: Principal, tokenId: Nat)) : async TxReceipt {
         var owner: Principal = switch (_ownerOf(tokenId)) {
             case (?own) {
                 own;
@@ -432,7 +440,7 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
         return _isApprovedForAll(owner, operator);
     };
 
-    public shared(msg) func setApprovalForAll(operator: Principal, value: Bool): async CallResult {
+    public shared(msg) func setApprovalForAll(operator: Principal, value: Bool): async TxReceipt {
         if(msg.caller == operator) {
             return #Err(#Unauthorized);
         };
@@ -472,8 +480,17 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
     };
 
     public shared(msg) func setTokenMetadata(tokenId: Nat, new_metadata: TokenMetadata) : async TxReceipt {
+
+        var owner: Principal = switch (_ownerOf(tokenId)) {
+            case (?own) {
+                own;
+            };
+            case (_) {
+                return #Err(#TokenNotExist)
+            }
+        };
         // only canister owner can set
-        if(msg.caller != owner_) {
+        if(msg.caller != owner) {
             return #Err(#Unauthorized);
         };
         if(_exists(tokenId) == false) {

@@ -38,8 +38,17 @@ module {
         var operatorForUse: ?Principal;
         timestamp: Time.Time;
     };
-
+   public type TokenInfoExt = {
+        index: Nat;
+        owner: Principal;
+        user: Principal; // this token's right to use
+        metadata: ?TokenMetadata;
+        operator: ?Principal;
+        operatorForUse: ?Principal;
+        timestamp: Time.Time;
+    };
     public type UserInfo = {
+        principal: Principal;
         var operators: TrieSet.Set<Principal>;    
         var allowedBy: TrieSet.Set<Principal>;     
         var allowedTokens: TrieSet.Set<Nat>;       
@@ -48,6 +57,16 @@ module {
         var tokens: TrieSet.Set<Nat>;     
         var tokenForUse: TrieSet.Set<Nat>;
     };
+    public type UserInfoExt = {
+        principal: Principal;
+        operators: TrieSet.Set<Principal>;    
+        allowedBy: TrieSet.Set<Principal>;     
+        allowedTokens: TrieSet.Set<Nat>;       
+
+        allowedTokensUse: TrieSet.Set<Nat>; 
+        tokens: TrieSet.Set<Nat>;     
+        tokenForUse: TrieSet.Set<Nat>;
+    };
 
     public type Errors = {
         #Unauthorized;
@@ -55,7 +74,7 @@ module {
         #InvalidSpender;
         #InvalidReceiver
     };
-    public type CallResult = {
+    public type TxReceipt = {
         #Ok: Nat;
         #Err: Errors;
     };
