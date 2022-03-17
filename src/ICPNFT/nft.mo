@@ -259,6 +259,48 @@ shared(msg) actor class NFToken(_logo: Text, _name: Text, _symbol: Text, _desc: 
             };
         }
     };
+    private func _clearApproval(owner: Principal, tokenId: Nat) {
+        assert(_exists(tokenId) and _isOwner(owner, tokenId));
+        switch (tokens.get(tokenId)) {
+            case (?info) {
+                if (info.operator != null) {
+                    let op = _unwrap(info.operator);
+                    let opInfo = _unwrap(users.get(op));
+                    opInfo.allowedTokens := TrieSet.delete(opInfo.allowedTokens, tokenId, Hash.hash(tokenId), Nat.equal);
+                    users.put(op, opInfo);
+                    info.operator := null;
+                    tokens.put(tokenId, info);
+                }
+            };
+            case _ {
+                assert(false);
+            };
+        }
+    }; 
+    private func _clearApprovalUser(owner: Principal, tokenId: Nat) {
+        assert(_exists(tokenId) and _isOwner(owner, tokenId));
+        switch (tokens.get(tokenId)) {
+            case (?info) {
+                if (info.operatorForUse != null) {
+                    let op = _unwrap(info.operatorForUse);
+                    let opInfo = _unwrap(users.get(op));
+                    opInfo.allowedTokensUse := TrieSet.delete(opInfo.allowedTokensUse, tokenId, Hash.hash(tokenId), Nat.equal);
+                    users.put(op, opInfo);
+                    info.operatorForUse := null;
+                    tokens.put(tokenId, info);
+                }
+            };
+            case _ {
+                assert(false);
+            };
+        }
+    }; 
+    private func _burn(owner: Principal, tokenId: Nat) {
+        _clearApproval(owner, tokenId);
+        _clearApprovalUser(owner, tokenId);
+        _transferUser(blackhole, tokenId);
+        _transfer(blackhole, tokenId);
+    };
     // public update calls
     public shared(msg) func mint(to: Principal, metadata: ?TokenMetadata): async MintResult {
         if(msg.caller != owner_) {
