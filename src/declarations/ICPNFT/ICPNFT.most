@@ -1,0 +1,56 @@
+// Version: 1.0.0
+type Callback = shared Message -> async ();
+type Contract =
+  {
+    #ContractAuthorized : {isAuthorized : Bool; user : Principal};
+    #Mint : {id : Text; owner : Principal}
+  };
+type Message =
+  {
+    createdAt : Int;
+    event : {#ContractEvent : Contract; #TokenEvent : Token};
+    topupAmount : Nat;
+    topupCallback : TopupCallback
+  };
+type NFTEntry = (Text, (?Principal, [Principal]), Token__1);
+type Properties = [Property];
+type Property = {immutable : Bool; name : Text; value : Value};
+type Token =
+  {
+    #Authorize : {id : Text; isAuthorized : Bool; user : Principal};
+    #Transfer : {from : Principal; id : Text; to : Principal}
+  };
+type Token__1 =
+  {
+    contentType : Text;
+    createdAt : Int;
+    isPrivate : Bool;
+    payload : [Blob];
+    properties : Properties
+  };
+type TopupCallback = shared () -> async ();
+type Value =
+  {
+    #Bool : Bool;
+    #Class : [Property];
+    #Empty;
+    #Float : Float;
+    #Int : Int;
+    #Nat : Nat;
+    #Principal : Principal;
+    #Text : Text
+  };
+actor {
+  stable var BROKER_CALL_LIMIT : Nat;
+  stable var BROKER_FAILED_CALL_LIMIT : Nat;
+  stable var CONTRACT_METADATA : {name : Text; symbol : Text};
+  stable var INITALIZED : Bool;
+  stable var TOPUP_AMOUNT : Nat;
+  stable var contractOwners : [Principal];
+  stable var id : Nat;
+  stable var messageBrokerCallback : ?Callback;
+  stable var messageBrokerCallsSinceLastTopup : Nat;
+  stable var messageBrokerFailedCalls : Nat;
+  stable var nftEntries : [NFTEntry];
+  stable var payloadSize : Nat
+};

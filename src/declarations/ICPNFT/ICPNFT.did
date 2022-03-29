@@ -1,0 +1,154 @@
+type WriteNFT = 
+ variant {
+   Chunk: record {
+            callback: opt Callback;
+            chunk: blob;
+            id: text;
+          };
+   Init: record {
+           callback: opt Callback;
+           size: nat;
+         };
+ };
+type Value = 
+ variant {
+   Bool: bool;
+   Class: vec Property;
+   Empty;
+   Float: float64;
+   Int: int;
+   Nat: nat;
+   Principal: principal;
+   Text: text;
+ };
+type UpdateEventCallback = 
+ variant {
+   Remove;
+   Set: Callback__1;
+ };
+type TopupCallback = func () -> ();
+type Token = 
+ variant {
+   Authorize: record {
+                id: text;
+                isAuthorized: bool;
+                user: principal;
+              };
+   Transfer: record {
+               from: principal;
+               id: text;
+               to: principal;
+             };
+ };
+type Result_2 = 
+ variant {
+   err: Error;
+   ok: principal;
+ };
+type Result_1 = 
+ variant {
+   err: Error;
+   ok;
+ };
+type Result = 
+ variant {
+   err: Error;
+   ok: text;
+ };
+type Property = 
+ record {
+   immutable: bool;
+   name: text;
+   value: Value;
+ };
+type Properties = vec Property;
+type Message = 
+ record {
+   createdAt: int;
+   event: variant {
+            ContractEvent: Contract;
+            TokenEvent: Token;
+          };
+   topupAmount: nat;
+   topupCallback: TopupCallback;
+ };
+type Hub = 
+ service {
+   authorize: (AuthorizeRequest) -> (Result_1);
+   balanceOf: (principal) -> (vec text) query;
+   getContractInfo: () -> (ContractInfo);
+   getEventCallbackStatus: () -> (CallbackStatus);
+   getMetadata: () -> (ContractMetadata) query;
+   getTotalMinted: () -> (nat) query;
+   init: (vec principal, ContractMetadata) -> ();
+   mint: (Egg) -> (Result);
+   ownerOf: (text) -> (Result_2) query;
+   transfer: (principal, text) -> (Result_1);
+   updateContractOwners: (principal, bool) -> (Result_1);
+   updateEventCallback: (UpdateEventCallback) -> ();
+   wallet_receive: () -> ();
+   writeStaged: (WriteNFT) -> (Result);
+ };
+type Error = 
+ variant {
+   AuthorizedPrincipalLimitReached: nat;
+   FailedToWrite: text;
+   Immutable;
+   InvalidRequest;
+   NotFound;
+   Unauthorized;
+ };
+type Egg = 
+ record {
+   contentType: text;
+   isPrivate: bool;
+   owner: opt principal;
+   payload: variant {
+              Payload: blob;
+              StagedData: text;
+            };
+   properties: Properties;
+ };
+type ContractMetadata = 
+ record {
+   name: text;
+   symbol: text;
+ };
+type ContractInfo = 
+ record {
+   authorized_users: vec principal;
+   cycles: nat;
+   heap_size: nat;
+   max_live_size: nat;
+   memory_size: nat;
+   nft_payload_size: nat;
+   total_minited: nat;
+ };
+type Contract = 
+ variant {
+   ContractAuthorized: record {
+                         isAuthorized: bool;
+                         user: principal;
+                       };
+   Mint: record {
+           id: text;
+           owner: principal;
+         };
+ };
+type Callback__1 = func (Message) -> ();
+type CallbackStatus = 
+ record {
+   callback: opt Callback__1;
+   callsSinceLastTopup: nat;
+   failedCalls: nat;
+   failedCallsLimit: nat;
+   noTopupCallLimit: nat;
+ };
+type Callback = func () -> ();
+type AuthorizeRequest = 
+ record {
+   id: text;
+   isAuthorized: bool;
+   p: principal;
+ };
+service : () -> Hub

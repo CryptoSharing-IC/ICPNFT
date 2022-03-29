@@ -3,19 +3,6 @@
     "ICPNFT": {
       "main": "src/ICPNFT/main.mo",
       "type": "motoko"
-    },
-    "ICPNFT_assets": {
-      "dependencies": [
-        "ICPNFT"
-      ],
-      "frontend": {
-        "entrypoint": "src/ICPNFT_assets/src/index.html"
-      },
-      "source": [
-        "src/ICPNFT_assets/assets",
-        "dist/ICPNFT_assets/"
-      ],
-      "type": "assets"
     }
   },
   "defaults": {
